@@ -1,0 +1,3 @@
+float32 target_velocity
+float32 current_velocity
+float32 demanded_velocity
