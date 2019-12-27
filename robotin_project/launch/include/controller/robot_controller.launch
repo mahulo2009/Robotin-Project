@@ -2,7 +2,7 @@
 
 <launch>
 
-	<param name="/robotin/robot_wheel_separation_x" type="double" value="0.21" />
+	<param name="/robotin/robot_wheel_separation_x" type="double" value="0.20" />
 	<param name="/robotin/robot_wheel_separation_y" type="double" value="0.16" />		
 	<param name="/robotin/robot_wheel_radious" type="double" value="0.034" />
 
@@ -11,9 +11,10 @@
 	<param name="/robotin/pid_d" type="double" value="0.3" />
 
 	<param name="/robotin/ticks_per_revolution" type="int" value="1200" />
-	
-	<param name="/robotin/gain" type="double" value="8.0" />	
-	<param name="/robotin/power_min" type="int" value="80" />
+	<param name="/robotin/gain" type="double" value="20.0" />
+	<param name="/robotin/offset" type="double" value="-250.0" />
+
+	<param name="/robotin/power_min" type="int" value="0" />
 	<param name="/robotin/power_max" type="int" value="255" />	
 
 	<param name="/robotin/pin_power_front_left" type="int" value="3" />
