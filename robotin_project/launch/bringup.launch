@@ -3,28 +3,32 @@
 <launch>
 
 	<!-- Serial Port to teensy -->
-  <include file="$(find robotin_project)/launch/include/controller/robot_controller.launch" />
+  	<include file="$(find robotin_project)/launch/include/controller/robot_controller.launch" />
 
-	<!-- Lidar -->
+	<!-- Lidar 
 	<include file="$(find rplidar_ros)/launch/rplidar.launch" />
+	-->
+	<!-- IMU Relay and Filter 
+  	<include file="$(find robotin_project)/launch/include/imu/imu.launch" />
+	-->
+	<!-- RGBD Camera 
+  	<include file="$(find robotin_project)/launch/include/camera/rs_camera.launch" />
+  	-->
 
-	<!-- IMU Relay and Filter -->
-  <include file="$(find robotin_project)/launch/include/imu/imu.launch" />
-
-	<!-- RGBD Camera -->
-  <include file="$(find robotin_project)/launch/include/camera/rs_camera.launch" />
-
+	<!-- Node to create the odometry from raw wheel velocities -->
 	<node pkg="robotin_project" type="robotin_base_node" name="robotin_base"/> 
 		
 	<!-- Static tf transforms -->
 	<node pkg="tf" type="static_transform_publisher" name="base_to_laser_broadcaster" args="0.08 0 0.15 0 0 0 base_link laser 100" />
 	<node pkg="tf" type="static_transform_publisher" name="base_to_camera_broadcaster" args="0 0 0.3 0 0 0 base_link camera_link 100" />
- 	<node pkg="tf" type="static_transform_publisher" name="base_to_imu_broadcaster" args="0.065 0.0 0.06 0 0 0.0 base_link imu_link 100" />
+	<node pkg="tf" type="static_transform_publisher" name="base_to_imu_broadcaster" args="0.065 0.0 0.06 0 0 0.0 base_link imu_link 100" />
+	
+	
 
-	<!-- Odom-IMU Extended Kalman Filter -->
+	<!-- Odom-IMU Extended Kalman Filter 
 	<node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization"> 
-   		<remap from="odometry/filtered" to="odom" />
-    	<rosparam command="load" file="$(find robotin_project)/config/ekf/robot_localization.yaml" />
+		<remap from="odometry/filtered" to="odom" />
+		<rosparam command="load" file="$(find robotin_project)/config/ekf/robot_localization.yaml" />
 	</node>
-
+	-->
 </launch>
