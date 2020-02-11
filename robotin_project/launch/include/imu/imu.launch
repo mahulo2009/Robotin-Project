@@ -4,8 +4,8 @@
 
     <node pkg="imu_calib" type="apply_calib" name="apply_calib" output="screen" respawn="false">
         <param name="calib_file" value="$(find robotin_project)/config/imu_calib.yaml" />
-	<param name="calibrate_gyros" value="true" />
-	<remap from="raw" to="raw_imu"/>
+		<param name="calibrate_gyros" value="true" />
+		<remap from="raw" to="raw_imu"/>
     </node>
 
 
