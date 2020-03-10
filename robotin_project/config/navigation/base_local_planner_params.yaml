@@ -3,11 +3,11 @@ DWAPlannerROS:
   ######## Robot configuration parameters
 
   #The absolute value of the maximum translational velocity for the robot in m/s
-  max_vel_trans: 0.25
+  max_vel_trans: 0.4
   #The absolute value of the minimum translational velocity for the robot in m/s
-  min_vel_trans: 0.1
+  min_vel_trans: 0.15
   #The maximum x velocity for the robot in m/s.
-  max_vel_x: 0.25
+  max_vel_x: 0.4
   #The minimum x velocity for the robot in m/s, negative for backwards motion.
   min_vel_x: -0.2
   #The maximum y velocity for the robot in m/s
@@ -17,7 +17,7 @@ DWAPlannerROS:
   #The absolute value of the maximum rotational velocity for the robot in rad/s
   max_vel_theta: 1.2
   #The absolute value of the minimum rotational velocity for the robot in rad/s
-  min_vel_theta: -1.2
+  min_vel_theta: 0.3
   #The x acceleration limit of the robot in meters/sec^2
   acc_lim_x: 1.25
   #The y acceleration limit of the robot in meters/sec^2
