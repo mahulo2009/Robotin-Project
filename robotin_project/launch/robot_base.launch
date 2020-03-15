@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+
+	<!-- Serial Port to teensy -->
+  	<include file="$(find robotin_project)/launch/include/controller/robot_controller.launch" />
+	
+	<!-- IMU Relay and Filter 	-->
+  	<include file="$(find robotin_project)/launch/include/imu/imu.launch" />
+
+	<!-- Node to create the odometry from raw wheel velocities -->
+	<node pkg="robotin_project" type="robotin_base_node" name="robotin_base"/> 
+
+</launch>

@@ -1,10 +1,11 @@
 FROM jetson/ros:melodic-core
 
-# INSTALL ROS serial
+# INSTALL ROS serial & imu
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-melodic-rosserial-arduino \
         ros-melodic-rosserial \
+        ros-melodic-imu-tools \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -21,7 +22,11 @@ RUN cd $CATKIN_WS/src && \
 	cd $CATKIN_WS && \       
 	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release'
 
-CMD ["/bin/bash", "-c", "roslaunch robotin-project rplidar.launch"]
+# BUILD ROS Imu calib
+RUN cd $CATKIN_WS/src && \		
+	git clone https://github.com/linorobot/imu_calib.git && \	
+	cd $CATKIN_WS && \       
+	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release'
 
 # BUILD ROS Robotin Project
 RUN cd $CATKIN_WS/src && \		
@@ -29,4 +34,4 @@ RUN cd $CATKIN_WS/src && \
 	cd $CATKIN_WS && \       
 	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release'
 
-CMD ["/bin/bash", "-c", "source $CATKIN_WS/devel/setup.bash;roslaunch robotin_project robot_controller.launch"]
+CMD ["/bin/bash", "-c", "source $CATKIN_WS/devel/setup.bash;roslaunch robotin_project robot_base.launch"]
