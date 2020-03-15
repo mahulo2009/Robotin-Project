@@ -46,4 +46,7 @@
     		<param name="baud" value="115200"/>
 	</node>
 
+	<!-- Node to create the odometry from raw wheel velocities -->
+	<node pkg="robotin_project" type="robotin_base_node" name="robotin_base"/> 
+
 </launch>

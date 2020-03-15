@@ -13,9 +13,6 @@
 
 	<!-- RGBD Camera   	-->
   	<include file="$(find robotin_project)/launch/include/camera/rs_camera.launch" />
-
-	<!-- Node to create the odometry from raw wheel velocities -->
-	<node pkg="robotin_project" type="robotin_base_node" name="robotin_base"/> 
 		
 	<!-- Static tf transforms -->
 	<node pkg="tf" type="static_transform_publisher" name="base_to_laser_broadcaster" args="0.08 0 0.15 0 0 0 base_link laser 100" />
