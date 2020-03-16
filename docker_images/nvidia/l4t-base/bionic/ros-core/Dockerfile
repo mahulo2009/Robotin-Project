@@ -1,5 +1,3 @@
-# This is an auto generated Dockerfile for ros:ros-core
-# generated from docker_images/create_ros_core_image.Dockerfile.em
 FROM nvcr.io/nvidia/l4t-base:r32.3.1
 
 # setup timezone
