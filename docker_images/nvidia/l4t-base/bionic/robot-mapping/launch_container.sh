@@ -2,6 +2,6 @@
 
 docker run --runtime=nvidia --rm -it \
            --net=foo \
-	   --name master \
+	   --env ROS_MASTER_URI=http://master:11311 \
 	   --privileged \
-           jetson/ros:robot-base
+           jetson/ros:robot-mapping
