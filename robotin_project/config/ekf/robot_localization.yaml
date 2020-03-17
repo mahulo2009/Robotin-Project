@@ -20,14 +20,14 @@ odom0_config: [false, false, false,
 odom0_differential: true
 odom0_relative: false
 
-odom1: /vo
-odom1_config: [false, false, false,
-              false, false, true,
-              false, false, false,
-              false, false, true,
-              false, false, false]
-odom1_differential: false
-odom1_relative: true
+#odom1: /vo
+#odom1_config: [false, false, false,
+#              false, false, true,
+#              false, false, false,
+#              false, false, true,
+#              false, false, false]
+#odom1_differential: false
+#odom1_relative: true
 
 
 imu0: /imu/data
@@ -49,6 +49,6 @@ odom_frame: odom
 base_link_frame: base_link
 world_frame: odom
 
-debug: true
-debug_out_file: /home/nvidia/file.txt
+#debug: true
+#debug_out_file: /home/nvidia/file.txt
 
