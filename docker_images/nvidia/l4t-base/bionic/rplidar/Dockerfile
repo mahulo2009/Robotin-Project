@@ -1,4 +1,4 @@
-FROM jetson/ros:melodic-core
+FROM jetson/ros:melodic-base
 
 # INSTALL ROS rplidar
 ENV DEBIAN_FRONTEND noninteractive

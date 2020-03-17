@@ -9,14 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# SETUP ROS workspace
-ENV CATKIN_WS /root/catkin_ws
-RUN mkdir -p $CATKIN_WS/src && \
-	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_init_workspace $CATKIN_WS/src' && \	
-	echo "source $CATKIN_WS/devel/setup.bash" >> ~/.bashrc 	
-
 # INSTALL Realsense Lib
-RUN sudo apt-key adv --keyserver keys.gnupg.net --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 
+RUN sudo apt-key adv --keyserver keys.gnupg.net --recv-key 6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 
 RUN sudo add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo bionic main" -u
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	apt-utils \
@@ -44,7 +38,6 @@ RUN cd $CATKIN_WS/src && \
 	cd $CATKIN_WS && \       
 	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release'
 
-CMD ["/bin/bash", "-c", "source $CATKIN_WS/devel/setup.bash;roslaunch realsense2_camera rs_camera.launch depth_fps:=15 infra_fps:=15 color_fps:=15 filters:=pointcloud"]
 
 
 

@@ -1,4 +1,4 @@
-FROM jetson/ros:realsense
+FROM jetson/ros:melodic-realsense
 
 # Install non-opencv dependent ros packages
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -41,8 +41,31 @@ RUN cd g2o && \
     cd && \
     rm -r g2o
 
-RUN ln -sf /usr/lib/aarch64-linux-gnu/libGL.so.1.0.0 /usr/lib/aarch64-linux-gnu/libGL.so
+# libpointmatcher 
+RUN git clone https://github.com/ethz-asl/libnabo.git
+#commit Apr 25 2018
+RUN cd libnabo && \
+    git checkout 7e378f6765393462357b8b74d8dc8c5554542ae6 && \
+    mkdir build && \
+    cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    make -j$(nproc) && \
+    make install && \
+    cd && \
+    rm -r libnabo
+RUN git clone https://github.com/ethz-asl/libpointmatcher.git
+#commit Jan 19 2018
+RUN cd libpointmatcher && \
+    git checkout 00004bd41e44a1cf8de24ad87e4914760717cbcc && \
+    mkdir build && \
+    cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    make -j$(nproc) && \
+    make install && \
+    cd && \
+    rm -r libpointmatcher
 
+RUN ln -sf /usr/lib/aarch64-linux-gnu/libGL.so.1.0.0 /usr/lib/aarch64-linux-gnu/libGL.so
 
 # Install
 RUN apt-get update && apt-get install --no-install-recommends -y \

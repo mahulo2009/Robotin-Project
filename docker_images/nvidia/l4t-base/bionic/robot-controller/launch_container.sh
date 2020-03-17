@@ -2,6 +2,6 @@
 
 docker run --runtime=nvidia --rm -it \
            --net=foo \
-	   --env ROS_MASTER_URI=http://master:11311 \
+	   --name master \
 	   --privileged \
-           jetson/ros:melodic-rplidar
+           jetson/ros:melodic-robot-controller
