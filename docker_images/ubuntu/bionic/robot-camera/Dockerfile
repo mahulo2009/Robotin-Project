@@ -6,4 +6,4 @@ RUN cd $CATKIN_WS/src && \
 	cd $CATKIN_WS && \       
 	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release'
 
-CMD ["/bin/bash", "-c", "source $CATKIN_WS/devel/setup.bash;roslaunch robotin_project rs_camera.launch"]
+CMD ["/bin/bash", "-c", "source $CATKIN_WS/devel/setup.bash;roslaunch robotin_project rs_camera.launch filters:=pointcloud"]
