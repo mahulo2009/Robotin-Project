@@ -17,25 +17,25 @@ class PointCloudSubscriber:
         """ Callback function for the topic  """
 
         # Convert ROS msg to PCL data
-        #self.pcl_data = ros_to_pcl(ros_msg)        
-        
+        self.pcl_data = ros_to_pcl(ros_msg) 
+
         # Statistical Outlier Filtering
         #self.pcl_data=self.statistical(self.pcl_data)
-        
+
         # Voxel Grid Downsampling
-        #self.pcl_data=self.voxel_grid(self.pcl_data)
-        
+        self.pcl_data=self.voxel_grid(self.pcl_data)
+
         # PassThrough Filter
-        #self.pcl_data=self.passthrough(self.pcl_data)
-        
+        self.pcl_data=self.passthrough(self.pcl_data)
+
         # RANSAC Plane Segmentation
-        #pcl_data_table, pcl_data_objects = self.segmenter(self.pcl_data)
-               
+        pcl_data_table, pcl_data_objects = self.segmenter(self.pcl_data)
+                       
         # Convert PCL data table to ROS messages
-        #ros_data_table = pcl_to_ros(pcl_data_table)
+        ros_data_table = pcl_to_ros(pcl_data_objects)
                
         # Publish ROS data table messages
-        #pcl_table_pub.publish(ros_data_table)
+        pcl_table_pub.publish(ros_data_table)
         
         # Add the table to the collidable objects. It stores the previous point cloud
         # ir order to publish this values as the robot rotate around the scene
@@ -73,7 +73,7 @@ class PointCloudSubscriber:
         
     def voxel_grid(self,pcl_data):
         voxel_grid_filter = pcl_data.make_voxel_grid_filter()
-        voxel_grid_filter.set_leaf_size(0.01, 0.01, 0.01)
+        voxel_grid_filter.set_leaf_size(0.008, 0.008, 0.008)
         pcl_data = voxel_grid_filter.filter()
         return pcl_data        
         
@@ -81,8 +81,8 @@ class PointCloudSubscriber:
         passthrough_filter = pcl_data.make_passthrough_filter()
         filter_axis = 'z'
         passthrough_filter.set_filter_field_name(filter_axis)
-        axis_min = 0.6
-        axis_max = 1.1
+        axis_min = 0.1
+        axis_max = 0.5
         passthrough_filter.set_filter_limits(axis_min, axis_max)
         pcl_data = passthrough_filter.filter()
         return pcl_data
@@ -164,15 +164,16 @@ class PointCloudSubscriber:
         return detected_objects_labels,detected_objects
 
     def clear_octomap(self):     
-        rospy.wait_for_service('/clear_octomap')
-        try:
-            clear_octomap = rospy.ServiceProxy('/clear_octomap', Empty)
-            clear_octomap()
-            print ("Response: OK" )     
-        except rospy.ServiceException, e:
-            print "Service clear_octomap call failed: %s"%e
+        pass
+        #rospy.wait_for_service('/clear_octomap')
+        #try:
+        #    clear_octomap = rospy.ServiceProxy('/clear_octomap', Empty)
+        #    clear_octomap()
+        #    print ("Response: OK" )     
+        #except rospy.ServiceException, e:
+        #    print "Service clear_octomap call failed: %s"%e
             
-            # function to load parameters and request PickPlace service
+        #    # function to load parameters and request PickPlace service
             
 if __name__ == '__main__':
 
@@ -185,7 +186,7 @@ if __name__ == '__main__':
 
     # Create Publishers
     #pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
-    #pcl_table_pub = rospy.Publisher("/pcl_table",PointCloud2, queue_size=1)
+    pcl_table_pub = rospy.Publisher("/pcl_table",PointCloud2, queue_size=1)
     #object_markers_pub = rospy.Publisher("/object_markers",Marker,queue_size=1)
     #detected_object_pub = rospy.Publisher("/detected_objects",DetectedObjectsArray,queue_size=1)
     #collidable_pub = rospy.Publisher("/pr2/3d_map/points",PointCloud2, queue_size=1)

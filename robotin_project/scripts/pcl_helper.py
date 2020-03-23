@@ -68,7 +68,7 @@ def pcl_to_ros(pcl_array):
     ros_msg = PointCloud2()
 
     ros_msg.header.stamp = rospy.Time.now()
-    ros_msg.header.frame_id = "world"
+    ros_msg.header.frame_id = "camera_link"
 
     ros_msg.height = 1
     ros_msg.width = pcl_array.size
@@ -107,7 +107,7 @@ def pcl_to_ros(pcl_array):
 
         buffer.append(struct.pack('ffffBBBBIII', data[0], data[1], data[2], 1.0, b, g, r, 0, 0, 0, 0))
 
-    ros_msg.data = "".join(buffer)
+    ros_msg.data = b"".join(buffer)
 
     return ros_msg
 
