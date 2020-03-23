@@ -4,7 +4,7 @@ docker run -it --rm --name rviz \
 	--network=host \
 	--privileged \
 	ubuntu/ros:melodic-desktop-full-bionic \
-        bash	
+        rviz -d /root/catkin_ws/src/Robotin-Project/robotin_project/config/realsense.rviz	
 
 
 
