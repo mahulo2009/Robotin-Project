@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import pickle
 
 from sensor_msgs.msg import PointCloud2
 from pcl_helper import *
@@ -27,12 +28,13 @@ class PointCloudSubscriber:
 
         # PassThrough Filter
         self.pcl_data=self.passthrough(self.pcl_data)
+        self.pcl_data=self.passthrough_y(self.pcl_data)
 
         # RANSAC Plane Segmentation
         pcl_data_table, pcl_data_objects = self.segmenter(self.pcl_data)
                        
         # Convert PCL data table to ROS messages
-        ros_data_table = pcl_to_ros(pcl_data_objects)
+        ros_data_table = pcl_to_ros(pcl_data_table)
                
         # Publish ROS data table messages
         pcl_table_pub.publish(ros_data_table)
@@ -82,7 +84,7 @@ class PointCloudSubscriber:
         passthrough_filter = pcl_data.make_passthrough_filter()
         filter_axis = 'z'
         passthrough_filter.set_filter_field_name(filter_axis)
-        axis_min = 0.1
+        axis_min = 0.4
         axis_max = 0.9
         passthrough_filter.set_filter_limits(axis_min, axis_max)
         pcl_data = passthrough_filter.filter()
@@ -92,8 +94,8 @@ class PointCloudSubscriber:
         passthrough_filter = pcl_data.make_passthrough_filter()
         filter_axis = 'y'
         passthrough_filter.set_filter_field_name(filter_axis)
-        axis_min = -0.4
-        axis_max = 0.4
+        axis_min = -0.2
+        axis_max = 1.0
         passthrough_filter.set_filter_limits(axis_min, axis_max)
         pcl_data = passthrough_filter.filter()
         return pcl_data
@@ -102,7 +104,7 @@ class PointCloudSubscriber:
         segmenter = pcl_data.make_segmenter()    
         segmenter.set_model_type(pcl.SACMODEL_PLANE)
         segmenter.set_method_type(pcl.SAC_RANSAC)    
-        segmenter.set_distance_threshold(0.01)
+        segmenter.set_distance_threshold(0.02)
         inliers, coefficients = segmenter.segment()
         # Extract inliers and outliers
         pcl_data_objects = pcl_data.extract(inliers, negative=True)
@@ -114,7 +116,7 @@ class PointCloudSubscriber:
         tree = pcl_data_objects_xyz.make_kdtree()
         EuclideanClusterExtraction = pcl_data_objects_xyz.make_EuclideanClusterExtraction()
         EuclideanClusterExtraction.set_ClusterTolerance(0.05)
-        EuclideanClusterExtraction.set_MinClusterSize(10)
+        EuclideanClusterExtraction.set_MinClusterSize(200)
         EuclideanClusterExtraction.set_MaxClusterSize(2000)
         # Search the k-d tree for clusters
         EuclideanClusterExtraction.set_SearchMethod(tree)
@@ -196,13 +198,16 @@ if __name__ == '__main__':
 
     # Load Model From disk
     #model = pickle.load(open('model.sav', 'rb'))
+    
+
+
     #clf = model['classifier']
     #encoder = LabelEncoder()
     #encoder.classes_ = model['classes']
     #scaler = model['scaler']
 
     # Initialize color_list
-    #get_color_list.color_list = []
+    get_color_list.color_list = []
 
     # Spin while node is not shutdown
     while not rospy.is_shutdown():
