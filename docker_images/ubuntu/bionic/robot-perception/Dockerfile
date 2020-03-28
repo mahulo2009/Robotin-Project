@@ -11,10 +11,11 @@ RUN apt-get update && apt-get install -y  \
 	python3-pip \
 	python3-yaml \
 	python3-pcl \ 
+	python3-tk \
 	&& \
      apt-get clean && \
      rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install rospkg catkin_pkg
+RUN pip3 install rospkg catkin_pkg matplotlib sklearn
 
 
