@@ -1,5 +1,4 @@
-FROM jetson/ros:melodic-perception
-
+FROM ubuntu/ros:melodic-perception
 
 # INSTALL base packages
 ENV DEBIAN_FRONTEND noninteractive
@@ -11,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # INSTALL Realsense Lib
 RUN apt-key adv --keyserver keys.gnupg.net --recv-key 6F3EFCDE || apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key  && add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo bionic main" -u
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y  \
 	apt-utils \
 	librealsense2-utils \
  	librealsense2-dev \
@@ -20,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 # INSTALL ROS Realsense
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y  \
 	ros-melodic-ddynamic-reconfigure \ 
 	ros-melodic-diagnostic-updater \
 	&& \
