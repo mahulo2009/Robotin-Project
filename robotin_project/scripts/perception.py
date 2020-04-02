@@ -3,8 +3,18 @@
 import rospy
 import pickle
 
+from sklearn.preprocessing import LabelEncoder
+
 from sensor_msgs.msg import PointCloud2
+from visualization_msgs.msg import Marker
+
 from pcl_helper import *
+
+from features import compute_color_histograms
+from features import compute_normal_histograms
+from features import get_normals
+from marker_tools import make_label
+
 
 class PointCloudSubscriber:
     """ Subscriber to the Point Cloud """
@@ -56,9 +66,9 @@ class PointCloudSubscriber:
         pcl_objects_pub.publish(ros_data_objects_clustered)
 
         # Classify the clusters! (loop through each detected cluster one at a time)
-        #detected_objects_labels,detected_objects = self.classifier(pcl_data_objects,cluster_indices,pcl_data_objects_xyz)
+        detected_objects_labels,detected_objects = self.classifier(pcl_data_objects,cluster_indices,pcl_data_objects_xyz)
         
-        #rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
+        rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
 
         # Publish the list of detected objects        
         #detected_object_pub.publish(detected_objects)
@@ -94,8 +104,8 @@ class PointCloudSubscriber:
         passthrough_filter = pcl_data.make_passthrough_filter()
         filter_axis = 'y'
         passthrough_filter.set_filter_field_name(filter_axis)
-        axis_min = -0.2
-        axis_max = 1.0
+        axis_min = 0.0
+        axis_max = 0.4
         passthrough_filter.set_filter_limits(axis_min, axis_max)
         pcl_data = passthrough_filter.filter()
         return pcl_data
@@ -148,23 +158,25 @@ class PointCloudSubscriber:
             pcl_data_single_object = pcl_data_objects.extract(pts_list)
             ros_data_single_object = pcl_to_ros(pcl_data_single_object)
             # Compute the associated feature vector
-            chists = compute_color_histograms(ros_data_single_object,using_hsv=True)
+            chists = compute_color_histograms(ros_data_single_object,using_hsv=False)
             normals = get_normals(ros_data_single_object)
             nhists = compute_normal_histograms(normals)
             feature = np.concatenate((chists, nhists))
             # Make the prediction
             prediction = clf.predict(scaler.transform(feature.reshape(1,-1)))
             label = encoder.inverse_transform(prediction)[0]
+
+            print(prediction)
             detected_objects_labels.append(label)
             # Publish a label into RViz
             label_pos = list(pcl_data_objects_xyz[pts_list[0]])
             label_pos[2] += .4
-            object_markers_pub.publish(make_label(label,label_pos, index))
+            object_markers_pub.publish(make_label(label,label_pos, index)) 
             # Add the detected object to the list of detected objects.
-            do = DetectedObject()
-            do.label = label
-            do.cloud = pcl_data_single_object
-            detected_objects.append(do)        
+            #do = DetectedObject()
+            #do.label = label
+            #do.cloud = pcl_data_single_object
+            #detected_objects.append(do)        
         return detected_objects_labels,detected_objects
 
     def clear_octomap(self):     
@@ -191,20 +203,20 @@ if __name__ == '__main__':
     # Create Publishers
     pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
     pcl_table_pub = rospy.Publisher("/pcl_table",PointCloud2, queue_size=1)
-    #object_markers_pub = rospy.Publisher("/object_markers",Marker,queue_size=1)
+    object_markers_pub = rospy.Publisher("/object_markers",Marker,queue_size=1)
     #detected_object_pub = rospy.Publisher("/detected_objects",DetectedObjectsArray,queue_size=1)
     #collidable_pub = rospy.Publisher("/pr2/3d_map/points",PointCloud2, queue_size=1)
     #world_joint_pub = rospy.Publisher("/pr2/world_joint_controller/command",Float64,queue_size=1)
 
     # Load Model From disk
-    #model = pickle.load(open('model.sav', 'rb'))
+    model = pickle.load(open('config/model-perception.sav', 'rb'))
     
 
 
-    #clf = model['classifier']
-    #encoder = LabelEncoder()
-    #encoder.classes_ = model['classes']
-    #scaler = model['scaler']
+    clf = model['classifier']
+    encoder = LabelEncoder()
+    encoder.classes_ = model['classes']
+    scaler = model['scaler']
 
     # Initialize color_list
     get_color_list.color_list = []

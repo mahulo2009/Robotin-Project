@@ -6,7 +6,7 @@ docker run -it --rm    \
 	--env ROS_MASTER_URI=http://gara-ubuntu:11311 \
 	-v /home/mhuertas/Work/Robotin-Project/robotin_project:/root/catkin_ws/src/robotin_project \
 	ubuntu/ros:melodic-robot-perception \
-	bash
+        python3 /root/catkin_ws/src/robotin_project/scripts/perception.py	
 
 
 

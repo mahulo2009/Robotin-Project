@@ -7,18 +7,10 @@ from sensor_msgs.msg import PointCloud2
 
 from features import compute_color_histograms
 from features import compute_normal_histograms
+from features import get_normals
 
 from pcl_helper import *
 
-def get_normals(ros_cloud):
-    pcl_data = ros_to_pcl(ros_cloud)
-    pcl_data_objects_xyz = XYZRGB_to_XYZ(pcl_data)
-
-    ne = pcl_data_objects_xyz.make_NormalEstimation()
-    ne.set_KSearch(3)
-    normals = ne.compute()      
-
-    return pcl_to_ros(normals)
 
 def capture_sample():
     return rospy.wait_for_message('/pcl_objects', PointCloud2)   
@@ -34,32 +26,36 @@ if __name__ == '__main__':
     labeled_features = []
 
     for model_name in models:
-        #print("Capturing ", model_name )
-        #input("Press enter to continue.")
-        for i in range(5):
-            print("Capturing ", model_name, "pose ", i )
-            #input("Press Enter to continue...")
+        print("Capturing ", model_name )
+        input("Press enter to continue.")
+        for i in range (20):
+            print("Pos ", i )
+            input("Press enter to continue.")
 
-            # make five attempts to get a valid a point cloud then give up
-            sample_was_good = False
-            try_count = 0
-            while not sample_was_good and try_count < 5:
-                sample_cloud = capture_sample()
-                sample_cloud_arr = ros_to_pcl(sample_cloud).to_array()
+            for i in range(5):
+                print("Capturing ", model_name, "pose ", i )
+                #input("Press Enter to continue...")
 
-                # Check for invalid clouds.
-                if sample_cloud_arr.shape[0] == 0:
-                    print('Invalid cloud detected')
-                    try_count += 1
-                else:
-                    sample_was_good = True
+                # make five attempts to get a valid a point cloud then give up
+                sample_was_good = False
+                try_count = 0
+                while not sample_was_good and try_count < 5:
+                    sample_cloud = capture_sample()
+                    sample_cloud_arr = ros_to_pcl(sample_cloud).to_array()
 
-            # Extract histogram features
-            chists = compute_color_histograms(sample_cloud, using_hsv=False)
-            normals = get_normals(sample_cloud)
-            nhists = compute_normal_histograms(normals)
-            feature = np.concatenate((chists, nhists))
-            labeled_features.append([feature, model_name])
+                    # Check for invalid clouds.
+                    if sample_cloud_arr.shape[0] == 0:
+                        print('Invalid cloud detected')
+                        try_count += 1
+                    else:
+                        sample_was_good = True
+
+                # Extract histogram features
+                chists = compute_color_histograms(sample_cloud, using_hsv=False)
+                normals = get_normals(sample_cloud)
+                nhists = compute_normal_histograms(normals)
+                feature = np.concatenate((chists, nhists))
+                labeled_features.append([feature, model_name])
             
         print(model_name, "procced" )
 

@@ -6,6 +6,16 @@ def rgb_to_hsv(rgb_list):
     hsv_normalized = matplotlib.colors.rgb_to_hsv([[rgb_normalized]])[0][0]
     return hsv_normalized
 
+def get_normals(ros_cloud):
+    pcl_data = ros_to_pcl(ros_cloud)
+    pcl_data_objects_xyz = XYZRGB_to_XYZ(pcl_data)
+
+    ne = pcl_data_objects_xyz.make_NormalEstimation()
+    ne.set_KSearch(3)
+    normals = ne.compute()      
+
+    return pcl_to_ros(normals)
+
 def compute_color_histograms(cloud, using_hsv=False):
 
     # Compute histograms for the clusters

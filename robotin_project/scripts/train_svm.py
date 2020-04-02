@@ -60,11 +60,10 @@ X_scaler = StandardScaler().fit(X)
 X = X_scaler.transform(X)
 y_train = np.array(label_list)
 
-print(label_list)
-
 # Convert label strings to numerical encoding
 encoder = LabelEncoder()
 y = encoder.fit_transform(y_train)
+
 
 X_train, X_test, y_train, y_test = \
 train_test_split(X, y, test_size=0.4, random_state=0)
@@ -73,11 +72,9 @@ train_test_split(X, y, test_size=0.4, random_state=0)
 clf = svm.SVC(kernel='linear').fit(X_train, y_train)
 
 scores = cross_val_score(clf, X=X_train, y=y_train, cv=3, scoring='accuracy')
-print(scores)
 
 print('Scores: ' + str(scores))
 print('Accuracy: %0.2f (+/- %0.2f)' % (scores.mean(), 2*scores.std()))
-
 
 # Gather predictions
 predictions = cross_val_predict(cv=3,
@@ -92,10 +89,6 @@ print('accuracy score: '+str(accuracy_score))
 confusion_matrix = metrics.confusion_matrix(y_train, predictions)
 
 class_names = encoder.classes_.tolist()
-
-
-#Train the classifier
-clf.fit(X=X_train, y=y_train)
 
 model = {'classifier': clf, 'classes': encoder.classes_, 'scaler': X_scaler}
 
