@@ -11,7 +11,7 @@ RobotinBase::RobotinBase():
     heading_(0)
 {
     odom_publisher_ = nh_.advertise<nav_msgs::Odometry>("raw_odom", 50);
-    velocity_subscriber_ = nh_.subscribe("/car/raw_vel", 50, &RobotinBase::velCallback, this);
+    velocity_subscriber_ = nh_.subscribe("/raw_vel", 50, &RobotinBase::velCallback, this);
 }
 
 void RobotinBase::velCallback(const robotin_project::RAW_VEL& vel)
@@ -51,7 +51,7 @@ void RobotinBase::velCallback(const robotin_project::RAW_VEL& vel)
     odom_trans.transform.rotation.w = odom_quat.w();
     odom_trans.header.stamp = current_time;
     //publish robot's tf using odom_trans object
-    //odom_broadcaster_.sendTransform(odom_trans);
+    odom_broadcaster_.sendTransform(odom_trans);
 
     odom.header.stamp = current_time;
     odom.header.frame_id = "odom";
