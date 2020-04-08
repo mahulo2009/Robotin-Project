@@ -4,6 +4,7 @@
 #include <geometry_msgs/Twist.h>
 #include <robotin_project/RAW_VEL.h>
 #include <robotin_project/PID.h>
+#include <robotin_project/TEL.h>
 #include <Encoder.h>
 #include <PID.h>
 
@@ -38,8 +39,8 @@ int total_wheels_ = 4;
 #define MOTOR4_IN_A 11
 #define MOTOR4_IN_B 10
 
-#define K_P 0.6 // P constant
-#define K_I 0.3 // I constant
+#define K_P 0.8 // P constant
+#define K_I 0.1 // I constant
 #define K_D 0.5 // D constant
 #define PWM_MIN -255
 #define PWM_MAX 255
@@ -56,42 +57,47 @@ PID motor2_pid(PWM_MIN, PWM_MAX, K_P, K_I, K_D);
 PID motor3_pid(PWM_MIN, PWM_MAX, K_P, K_I, K_D);
 PID motor4_pid(PWM_MIN, PWM_MAX, K_P, K_I, K_D);
 
-//-----------------------------Robot base
-float robot_base_linear_vel_x = 0;
-float robot_base_linear_vel_y = 0;
-float robot_base_linear_vel_z = 0;
-
-void robot_base_move();
-void robot_base_stop();
-
 //-----------------------------Kinematic
 struct kinematic_rpm {
   int motor1;
   int motor2;
   int motor3;
   int motor4;
-} kinematic_rpm_t;
+};
 
 struct kinematic_velocities {
   float linear_x;
   float linear_y;
   float angular_z;
-} kinematic_velocities_t;
+};
 
-void kinematic_direct(float linear_x, float linear_y, float angular_z);
-void kinematic_inverse(int kinematic_rpm1, int kinematic_rpm2, int kinematic_rpm3, int kinematic_rpm4);
+kinematic_rpm kinematic_rpm_target;
+kinematic_rpm kinematic_rpm_current;
+kinematic_rpm kinematic_rpm_demanded;
+
+kinematic_rpm kinematic_direct(const kinematic_velocities &kinematic_velocities_t);
+kinematic_velocities kinematic_inverse(const kinematic_rpm &kinematic_rpm_t);
 
 //-----------------------------Motor Drive
 void motor_drive_init(int motor_pinA_,int motor_pinB_,int pwm_pin_);
 void motor_drive_move(int pwm,int motor_pinA_,int motor_pinB_,int pwm_pin_);
 
+//-----------------------------Robot base
+kinematic_velocities kinematic_velocities_t;
+
+kinematic_velocities robot_base_move();
+void robot_base_stop();
 //-----------------------------ROS
 ros::NodeHandle ros_nh;
 
 unsigned long ros_prev_command_time = 0;
 robotin_project::RAW_VEL ros_raw_vel_msg;
+robotin_project::TEL ros_pid1_tel_msg;
+robotin_project::TEL ros_pid2_tel_msg;
+robotin_project::TEL ros_pid3_tel_msg;
+robotin_project::TEL ros_pid4_tel_msg;
 
-void ros_publish_velocities();
+void ros_publish_velocities(kinematic_velocities kinematic_velocities_t);
 void ros_cmd_callback(const geometry_msgs::Twist & cmd_msg);
 void ros_pid_callback(const robotin_project::PID& pid);
 
@@ -99,6 +105,11 @@ ros::Subscriber<geometry_msgs::Twist> ros_cmd_sub("cmd_vel",ros_cmd_callback);
 ros::Subscriber<robotin_project::PID> ros_pid_sub("pid", ros_pid_callback);
 
 ros::Publisher ros_raw_vel_pub("raw_vel", &ros_raw_vel_msg);
+
+ros::Publisher ros_pid1_tel_pub("/pid1/tel_vel",&ros_pid1_tel_msg);
+ros::Publisher ros_pid2_tel_pub("/pid2/tel_vel",&ros_pid2_tel_msg);
+ros::Publisher ros_pid3_tel_pub("/pid3/tel_vel",&ros_pid3_tel_msg);
+ros::Publisher ros_pid4_tel_pub("/pid4/tel_vel",&ros_pid4_tel_msg);
 
 //-----------------------------Setup
 void setup() {
@@ -111,8 +122,12 @@ void setup() {
   ros_nh.initNode();
   ros_nh.subscribe(ros_cmd_sub);
   ros_nh.subscribe(ros_pid_sub);
-  
   ros_nh.advertise(ros_raw_vel_pub);
+  ros_nh.advertise(ros_pid1_tel_pub);
+  ros_nh.advertise(ros_pid2_tel_pub);
+  ros_nh.advertise(ros_pid3_tel_pub);
+  ros_nh.advertise(ros_pid4_tel_pub);
+
   ros_nh.getHardware()->setBaud(115200);
 
   while(!ros_nh.connected()) {
@@ -128,13 +143,13 @@ void loop() {
   static unsigned long prev_control_time = 0; 
   
   if ((millis() - prev_control_time) >= (1000 / COMMAND_RATE)) {
-    robot_base_move();
+    kinematic_velocities kinematic_velocities_t = robot_base_move();
     prev_control_time = millis();
 
-    ros_publish_velocities();
+    ros_publish_velocities(kinematic_velocities_t);
   }
 
-  if ((millis() - ros_prev_command_time) >= 400) {
+  if ((millis() - ros_prev_command_time) >= 800) {
         robot_base_stop();
   }
 
@@ -142,59 +157,89 @@ void loop() {
 }
 
 //-------------------ROS
-void ros_publish_velocities() {
-    //pass kinematic_velocities to publisher object
-    ros_raw_vel_msg.linear_x = kinematic_velocities_t.linear_x;
-    ros_raw_vel_msg.linear_y = kinematic_velocities_t.linear_y;
-    ros_raw_vel_msg.angular_z = kinematic_velocities_t.angular_z;
+void ros_publish_velocities(kinematic_velocities kinematic_velocities_t) {
+  //pass kinematic_velocities to publisher object
+  ros_raw_vel_msg.linear_x = kinematic_velocities_t.linear_x;
+  ros_raw_vel_msg.linear_y = kinematic_velocities_t.linear_y;
+  ros_raw_vel_msg.angular_z = kinematic_velocities_t.angular_z;
 
     //publish ros_raw_vel_msg
-    ros_raw_vel_pub.publish(&ros_raw_vel_msg);
+  ros_raw_vel_pub.publish(&ros_raw_vel_msg);
+
+  ros_pid1_tel_msg.target_velocity=kinematic_rpm_target.motor1;
+  ros_pid1_tel_msg.current_velocity=kinematic_rpm_current.motor1;
+  ros_pid1_tel_msg.demanded_velocity=kinematic_rpm_demanded.motor1;
+  ros_pid1_tel_msg.demanded_duty=0;
+  ros_pid1_tel_pub.publish(&ros_pid1_tel_msg);
+
+  ros_pid2_tel_msg.target_velocity=kinematic_rpm_target.motor2;
+  ros_pid2_tel_msg.current_velocity=kinematic_rpm_current.motor2;
+  ros_pid2_tel_msg.demanded_velocity=kinematic_rpm_demanded.motor2;
+  ros_pid2_tel_msg.demanded_duty=0;
+  ros_pid2_tel_pub.publish(&ros_pid2_tel_msg);
+
+  ros_pid3_tel_msg.target_velocity=kinematic_rpm_target.motor3;
+  ros_pid3_tel_msg.current_velocity=kinematic_rpm_current.motor3;
+  ros_pid3_tel_msg.demanded_velocity=kinematic_rpm_demanded.motor3;
+  ros_pid3_tel_msg.demanded_duty=0;
+  ros_pid3_tel_pub.publish(&ros_pid3_tel_msg);
+
+  ros_pid4_tel_msg.target_velocity=kinematic_rpm_target.motor4;
+  ros_pid4_tel_msg.current_velocity=kinematic_rpm_current.motor4;
+  ros_pid4_tel_msg.demanded_velocity=kinematic_rpm_demanded.motor4;
+  ros_pid4_tel_msg.demanded_duty=0;
+  ros_pid4_tel_pub.publish(&ros_pid4_tel_msg);
 }
 
 void ros_cmd_callback(const geometry_msgs::Twist & cmd_msg) {
-
-  robot_base_linear_vel_x = cmd_msg.linear.x;
-  robot_base_linear_vel_y = cmd_msg.linear.y;
-  robot_base_linear_vel_z = cmd_msg.angular.z;
+  kinematic_velocities_t.linear_x = cmd_msg.linear.x;
+  kinematic_velocities_t.linear_y = cmd_msg.linear.y;
+  kinematic_velocities_t.angular_z = cmd_msg.angular.z;
 
   ros_prev_command_time = millis();
 }
 
 void ros_pid_callback(const robotin_project::PID& pid) {
-    motor1_pid.updateConstants(pid.p, pid.i, pid.d);
-    motor2_pid.updateConstants(pid.p, pid.i, pid.d);
-    motor3_pid.updateConstants(pid.p, pid.i, pid.d);
-    motor4_pid.updateConstants(pid.p, pid.i, pid.d);
+  motor1_pid.updateConstants(pid.p, pid.i, pid.d);
+  motor2_pid.updateConstants(pid.p, pid.i, pid.d);
+  motor3_pid.updateConstants(pid.p, pid.i, pid.d);
+  motor4_pid.updateConstants(pid.p, pid.i, pid.d);
 }
 
 //-------------------Robot base.
-void robot_base_move() {
-
-  kinematic_direct(robot_base_linear_vel_x,0,robot_base_linear_vel_z);
-
-  int current_kinematic_rpm1 = motor1_encoder.getRPM();
-  int current_kinematic_rpm2 = motor2_encoder.getRPM();
-  int current_kinematic_rpm3 = motor3_encoder.getRPM();
-  int current_kinematic_rpm4 = motor4_encoder.getRPM();
-  
+kinematic_velocities robot_base_move() {
+  /*
   char buffer[50];
   sprintf (buffer, "%d %d %d %d",current_kinematic_rpm1,current_kinematic_rpm2,current_kinematic_rpm3,current_kinematic_rpm4);
   ros_nh.loginfo(buffer);
-  
-  kinematic_inverse(current_kinematic_rpm1, current_kinematic_rpm2, current_kinematic_rpm3, current_kinematic_rpm4);
+  */
 
-  motor_drive_move(motor1_pid.compute(kinematic_rpm_t.motor1, current_kinematic_rpm1),MOTOR1_IN_A,MOTOR1_IN_B,MOTOR1_PWM);
-  motor_drive_move(motor2_pid.compute(kinematic_rpm_t.motor2, current_kinematic_rpm2),MOTOR2_IN_A,MOTOR2_IN_B,MOTOR2_PWM);
-  motor_drive_move(motor3_pid.compute(kinematic_rpm_t.motor3, current_kinematic_rpm3),MOTOR3_IN_A,MOTOR3_IN_B,MOTOR3_PWM);
-  motor_drive_move(motor4_pid.compute(kinematic_rpm_t.motor4, current_kinematic_rpm4),MOTOR4_IN_A,MOTOR4_IN_B,MOTOR4_PWM);
+  kinematic_rpm_target =  kinematic_direct(kinematic_velocities_t);
 
+  kinematic_rpm_current.motor1 = motor1_encoder.getRPM();
+  kinematic_rpm_current.motor2 = motor2_encoder.getRPM();
+  kinematic_rpm_current.motor3 = motor3_encoder.getRPM();
+  kinematic_rpm_current.motor4 = motor4_encoder.getRPM();
+
+  kinematic_rpm_demanded.motor1 = motor1_pid.compute(kinematic_rpm_target.motor1, kinematic_rpm_current.motor1);
+  kinematic_rpm_demanded.motor2 = motor2_pid.compute(kinematic_rpm_target.motor2, kinematic_rpm_current.motor2);
+  kinematic_rpm_demanded.motor3 = motor3_pid.compute(kinematic_rpm_target.motor3, kinematic_rpm_current.motor3);
+  kinematic_rpm_demanded.motor4 = motor4_pid.compute(kinematic_rpm_target.motor4, kinematic_rpm_current.motor4);
+
+  kinematic_velocities kinematic_velocities_t = kinematic_inverse(kinematic_rpm_current);
+
+  motor_drive_move(kinematic_rpm_demanded.motor1,MOTOR1_IN_A,MOTOR1_IN_B,MOTOR1_PWM);
+  motor_drive_move(kinematic_rpm_demanded.motor2,MOTOR2_IN_A,MOTOR2_IN_B,MOTOR2_PWM);
+  motor_drive_move(kinematic_rpm_demanded.motor3,MOTOR3_IN_A,MOTOR3_IN_B,MOTOR3_PWM);
+  motor_drive_move(kinematic_rpm_demanded.motor4,MOTOR4_IN_A,MOTOR4_IN_B,MOTOR4_PWM);
+
+  return kinematic_velocities_t;
 }
 
 void robot_base_stop() {
-  robot_base_linear_vel_x = 0;
-  robot_base_linear_vel_y = 0;
-  robot_base_linear_vel_z = 0;
+  kinematic_velocities_t.linear_x=0;
+  kinematic_velocities_t.linear_y=0;
+  kinematic_velocities_t.angular_z=0;
 }
 
 //-------------------Motor Drive.
@@ -216,54 +261,69 @@ void motor_drive_move(int pwm,int motor_pinA_,int motor_pinB_,int pwm_pin_) {
 }
 
 //-------------------Kinematic
-void kinematic_direct(float linear_x, float linear_y, float angular_z)  {
-    float linear_vel_x_mins;
-    float angular_vel_z_mins;
-    float tangential_vel;
-    float x_kinematic_rpm;
-    float tan_kinematic_rpm;
+kinematic_rpm kinematic_direct(const kinematic_velocities & kinematic_velocities_t)  {
+  kinematic_rpm kinematic_rpm_t;
 
-    //convert m/s to m/min
-    linear_vel_x_mins = linear_x * 60;
+  float linear_vel_x_mins;
+  float angular_vel_z_mins;
+  float tangential_vel;
+  float x_kinematic_rpm;
+  float tan_kinematic_rpm;
 
-    //convert rad/s to rad/min
-    angular_vel_z_mins = angular_z * 60;
+  //convert m/s to m/min
+  linear_vel_x_mins = kinematic_velocities_t.linear_x * 60;
 
-    tangential_vel = angular_vel_z_mins * ((wheels_x_distance_ / 2) + (wheels_y_distance_ / 2));
+  //convert rad/s to rad/min
+  angular_vel_z_mins = kinematic_velocities_t.angular_z * 60;
 
-    x_kinematic_rpm = linear_vel_x_mins / wheel_circumference_;
-    tan_kinematic_rpm = tangential_vel / wheel_circumference_;
-    
-    //calculate for the target motor kinematic_rpm and direction
-    //front-left motor
-    kinematic_rpm_t.motor1 = x_kinematic_rpm  - tan_kinematic_rpm;
-    kinematic_rpm_t.motor1 = constrain(kinematic_rpm_t.motor1, -max_kinematic_rpm_, max_kinematic_rpm_);
+  tangential_vel = angular_vel_z_mins * ((wheels_x_distance_ / 2) + (wheels_y_distance_ / 2));
 
-    //front-right motor
-    kinematic_rpm_t.motor2 = x_kinematic_rpm  + tan_kinematic_rpm;
-    kinematic_rpm_t.motor2 = constrain(kinematic_rpm_t.motor2, -max_kinematic_rpm_, max_kinematic_rpm_);
+  x_kinematic_rpm = linear_vel_x_mins / wheel_circumference_;
+  tan_kinematic_rpm = tangential_vel / wheel_circumference_;
+  
+  //calculate for the target motor kinematic_rpm and direction
+  //front-left motor
+  kinematic_rpm_t.motor1 = x_kinematic_rpm  - tan_kinematic_rpm;
+  kinematic_rpm_t.motor1 = constrain(kinematic_rpm_t.motor1, -max_kinematic_rpm_, max_kinematic_rpm_);
 
-    //rear-left motor
-    kinematic_rpm_t.motor3 = x_kinematic_rpm  - tan_kinematic_rpm;
-    kinematic_rpm_t.motor3 = constrain(kinematic_rpm_t.motor3, -max_kinematic_rpm_, max_kinematic_rpm_);
+  //front-right motor
+  kinematic_rpm_t.motor2 = x_kinematic_rpm  + tan_kinematic_rpm;
+  kinematic_rpm_t.motor2 = constrain(kinematic_rpm_t.motor2, -max_kinematic_rpm_, max_kinematic_rpm_);
 
-    //rear-right motor
-    kinematic_rpm_t.motor4 = x_kinematic_rpm  + tan_kinematic_rpm;
-    kinematic_rpm_t.motor4 = constrain(kinematic_rpm_t.motor4, -max_kinematic_rpm_, max_kinematic_rpm_);
+  //rear-left motor
+  kinematic_rpm_t.motor3 = x_kinematic_rpm  - tan_kinematic_rpm;
+  kinematic_rpm_t.motor3 = constrain(kinematic_rpm_t.motor3, -max_kinematic_rpm_, max_kinematic_rpm_);
+
+  //rear-right motor
+  kinematic_rpm_t.motor4 = x_kinematic_rpm  + tan_kinematic_rpm;
+  kinematic_rpm_t.motor4 = constrain(kinematic_rpm_t.motor4, -max_kinematic_rpm_, max_kinematic_rpm_);
+
+  return kinematic_rpm_t;
 }
 
-void kinematic_inverse(int kinematic_rpm1, int kinematic_rpm2, int kinematic_rpm3, int kinematic_rpm4) {
-    float average_rps_x;
-    float average_rps_a;
+kinematic_velocities kinematic_inverse(const kinematic_rpm &kinematic_rpm_t) {
+  kinematic_velocities kinematic_velocities_t;
 
-    //convert average revolutions per minute to revolutions per second
-    average_rps_x = ((float)(kinematic_rpm1 + kinematic_rpm2 + kinematic_rpm3 + kinematic_rpm4) / total_wheels_) / 60; // kinematic_rpm
-    kinematic_velocities_t.linear_x = average_rps_x * wheel_circumference_; // m/s
+  float average_rps_x;
+  float average_rps_a;
 
-    //convert average revolutions per minute in y axis to revolutions per second
-    kinematic_velocities_t.linear_y = 0;
+  //convert average revolutions per minute to revolutions per second
+  average_rps_x = ((float)(kinematic_rpm_t.motor1 + 
+                            kinematic_rpm_t.motor2 + 
+                            kinematic_rpm_t.motor3 + 
+                            kinematic_rpm_t.motor4) / total_wheels_) / 60; // kinematic_rpm
+  kinematic_velocities_t.linear_x = average_rps_x * wheel_circumference_; // m/s
 
-    //convert average revolutions per minute to revolutions per second
-    average_rps_a = ((float)(-kinematic_rpm1 + kinematic_rpm2 - kinematic_rpm3 + kinematic_rpm4) / total_wheels_) / 60;
-    kinematic_velocities_t.angular_z =  (average_rps_a * wheel_circumference_) / ((wheels_x_distance_ / 2) + (wheels_y_distance_ / 2)); //  rad/s    
+  //convert average revolutions per minute in y axis to revolutions per second
+  kinematic_velocities_t.linear_y = 0;
+
+  //convert average revolutions per minute to revolutions per second
+  average_rps_a = ((float)(-kinematic_rpm_t.motor1 + 
+                            kinematic_rpm_t.motor2 - 
+                            kinematic_rpm_t.motor3 + 
+                            kinematic_rpm_t.motor4) / total_wheels_) / 60;
+  kinematic_velocities_t.angular_z =  (average_rps_a * wheel_circumference_) / 
+                                        ((wheels_x_distance_ / 2) + (wheels_y_distance_ / 2)); //  rad/s    
+
+  return kinematic_velocities_t;
 }
