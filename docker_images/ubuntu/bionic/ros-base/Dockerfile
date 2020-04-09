@@ -1,4 +1,4 @@
-FROM ubuntu/ros:melodic-core
+FROM ubuntu-melodic/ros:core
 
 # install ros packages
 RUN apt-get update && apt-get install -y \

@@ -5,8 +5,8 @@ docker run -it --rm \
 	--env ROS_MASTER_URI=http://gara-ubuntu:11311 \
 	--network=host \
 	--privileged \
-	ubuntu-melodic/ros:robot-teleop \
-	bash
+	ubuntu-melodic/ros:ros-rqt-pid \
+    bash
 
 
 

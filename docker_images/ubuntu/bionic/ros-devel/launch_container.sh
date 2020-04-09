@@ -6,8 +6,8 @@ docker run -it --rm \
        	-v /dev:/dev \
 	--network=host \
 	--privileged \
-	ubuntu/ros:melodic-ros-devel \
-        bash
+	ubuntu-melodic/ros:ros-devel \
+    bash
 
 
 

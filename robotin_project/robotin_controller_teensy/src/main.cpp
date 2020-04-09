@@ -39,9 +39,9 @@ int total_wheels_ = 4;
 #define MOTOR4_IN_A 11
 #define MOTOR4_IN_B 10
 
-#define K_P 0.8 // P constant
-#define K_I 0.1 // I constant
-#define K_D 0.5 // D constant
+#define K_P 0.9 // P constant
+#define K_I 0.4 // I constant
+#define K_D 0.6 // D constant
 #define PWM_MIN -255
 #define PWM_MAX 255
 
@@ -163,7 +163,7 @@ void ros_publish_velocities(kinematic_velocities kinematic_velocities_t) {
   ros_raw_vel_msg.linear_y = kinematic_velocities_t.linear_y;
   ros_raw_vel_msg.angular_z = kinematic_velocities_t.angular_z;
 
-    //publish ros_raw_vel_msg
+  //publish ros_raw_vel_msg
   ros_raw_vel_pub.publish(&ros_raw_vel_msg);
 
   ros_pid1_tel_msg.target_velocity=kinematic_rpm_target.motor1;
@@ -207,13 +207,7 @@ void ros_pid_callback(const robotin_project::PID& pid) {
 }
 
 //-------------------Robot base.
-kinematic_velocities robot_base_move() {
-  /*
-  char buffer[50];
-  sprintf (buffer, "%d %d %d %d",current_kinematic_rpm1,current_kinematic_rpm2,current_kinematic_rpm3,current_kinematic_rpm4);
-  ros_nh.loginfo(buffer);
-  */
-
+kinematic_velocities robot_base_move() {  
   kinematic_rpm_target =  kinematic_direct(kinematic_velocities_t);
 
   kinematic_rpm_current.motor1 = motor1_encoder.getRPM();
