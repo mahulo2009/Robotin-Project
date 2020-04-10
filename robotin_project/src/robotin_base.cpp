@@ -51,7 +51,8 @@ void RobotinBase::velCallback(const robotin_project::RAW_VEL& vel)
     odom_trans.transform.rotation.w = odom_quat.w();
     odom_trans.header.stamp = current_time;
     //publish robot's tf using odom_trans object
-    odom_broadcaster_.sendTransform(odom_trans);
+    //TODO Add parameter to node to say if TF is sent or not
+    //odom_broadcaster_.sendTransform(odom_trans);
 
     odom.header.stamp = current_time;
     odom.header.frame_id = "odom";
