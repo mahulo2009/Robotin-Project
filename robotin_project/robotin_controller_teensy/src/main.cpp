@@ -7,15 +7,38 @@
 #include <robotin_project/TEL.h>
 #include <Encoder.h>
 #include <PID.h>
+#include <lino_msgs/Imu.h>
+
+#include "ADXL345.h"
+#include "ITG3200.h"
+#include "MechaQMC5883.h"
+
+#define ACCEL_SCALE 1 / 256 // LSB/g
+#define GYRO_SCALE 1 / 14.375 // LSB/(deg/s)
+#define MAG_SCALE 0.92 * MGAUSS_TO_UTESLA // uT/LSB
+
+#define G_TO_ACCEL 9.81
+#define MGAUSS_TO_UTESLA 0.1
+#define UTESLA_TO_TESLA 0.000001
+
+#define ACCEL_SCALE 1 / 256 // LSB/g
+#define GYRO_SCALE 1 / 14.375 // LSB/(deg/s)
+#define MAG_SCALE 0.92 * MGAUSS_TO_UTESLA // uT/LSB
+
+
+ADXL345 accelerometer;
+ITG3200 gyroscope;
+MechaQMC5883 magnetometer;
 
 //----------------------------------Configuration
-#define COMMAND_RATE 20 //hz
+#define COMMAND_RATE 20     //hz
+#define IMU_PUBLISH_RATE 20 //hz
 
 double wheel_circumference_ = 0.034*2*M_PI;
-double wheels_x_distance_ = 0.10;
-double wheels_y_distance_ = 0.215;
-double max_kinematic_rpm_ =  215;
-int total_wheels_ = 4;
+double wheels_x_distance_   = 0.10;
+double wheels_y_distance_   = 0.215;
+double max_kinematic_rpm_   =  215;
+int total_wheels_           = 4;
 
 #define MOTOR1_ENCODER_A 14
 #define MOTOR1_ENCODER_B 15
@@ -82,6 +105,12 @@ kinematic_velocities kinematic_inverse(const kinematic_rpm &kinematic_rpm_t);
 void motor_drive_init(int motor_pinA_,int motor_pinB_,int pwm_pin_);
 void motor_drive_move(int pwm,int motor_pinA_,int motor_pinB_,int pwm_pin_);
 
+//-----------------------------Robot Imu
+bool robot_imu_init();
+geometry_msgs::Vector3 robot_imu_accelerometer_read();
+geometry_msgs::Vector3 robot_imu_gyroscope_read();
+geometry_msgs::Vector3 robot_imu_magnetometer_read();
+
 //-----------------------------Robot base
 kinematic_velocities kinematic_velocities_t;
 
@@ -92,12 +121,14 @@ ros::NodeHandle ros_nh;
 
 unsigned long ros_prev_command_time = 0;
 robotin_project::RAW_VEL ros_raw_vel_msg;
+lino_msgs::Imu ros_imu_msg;     
 robotin_project::TEL ros_pid1_tel_msg;
 robotin_project::TEL ros_pid2_tel_msg;
 robotin_project::TEL ros_pid3_tel_msg;
 robotin_project::TEL ros_pid4_tel_msg;
 
 void ros_publish_velocities(kinematic_velocities kinematic_velocities_t);
+void ros_publish_imu();
 void ros_cmd_callback(const geometry_msgs::Twist & cmd_msg);
 void ros_pid_callback(const robotin_project::PID& pid);
 
@@ -105,6 +136,7 @@ ros::Subscriber<geometry_msgs::Twist> ros_cmd_sub("cmd_vel",ros_cmd_callback);
 ros::Subscriber<robotin_project::PID> ros_pid_sub("pid", ros_pid_callback);
 
 ros::Publisher ros_raw_vel_pub("raw_vel", &ros_raw_vel_msg);
+ros::Publisher ros_imu_pub("raw_imu", &ros_imu_msg);
 
 ros::Publisher ros_pid1_tel_pub("/pid1/tel_vel",&ros_pid1_tel_msg);
 ros::Publisher ros_pid2_tel_pub("/pid2/tel_vel",&ros_pid2_tel_msg);
@@ -122,6 +154,7 @@ void setup() {
   ros_nh.initNode();
   ros_nh.subscribe(ros_cmd_sub);
   ros_nh.subscribe(ros_pid_sub);
+  ros_nh.advertise(ros_imu_pub);
   ros_nh.advertise(ros_raw_vel_pub);
   ros_nh.advertise(ros_pid1_tel_pub);
   ros_nh.advertise(ros_pid2_tel_pub);
@@ -134,6 +167,10 @@ void setup() {
     ros_nh.spinOnce();
   }
 
+  bool imu_connected = robot_imu_init();
+  if (imu_connected)
+    ros_nh.loginfo("Imu Connected!");
+
   ros_nh.loginfo("Robotin Connected!");
   delay(1);
 }
@@ -141,6 +178,7 @@ void setup() {
 //-----------------------------Loop
 void loop() { 
   static unsigned long prev_control_time = 0; 
+  static unsigned long prev_imu_time = 0;
   
   if ((millis() - prev_control_time) >= (1000 / COMMAND_RATE)) {
     kinematic_velocities kinematic_velocities_t = robot_base_move();
@@ -150,7 +188,14 @@ void loop() {
   }
 
   if ((millis() - ros_prev_command_time) >= 800) {
-        robot_base_stop();
+    robot_base_stop();
+  }
+
+  //this block publishes the IMU data based on defined rate
+  if ((millis() - prev_imu_time) >= (1000 / IMU_PUBLISH_RATE)) {
+      //sanity check if the IMU is connected
+    ros_publish_imu();
+    prev_imu_time = millis();
   }
 
   ros_nh.spinOnce();
@@ -191,6 +236,20 @@ void ros_publish_velocities(kinematic_velocities kinematic_velocities_t) {
   ros_pid4_tel_pub.publish(&ros_pid4_tel_msg);
 }
 
+void ros_publish_imu() {
+  //pass accelerometer data to imu object
+  ros_imu_msg.linear_acceleration = robot_imu_accelerometer_read();
+
+  //pass gyroscope data to imu object
+  ros_imu_msg.angular_velocity = robot_imu_gyroscope_read();
+
+  //pass accelerometer data to imu object
+  ros_imu_msg.magnetic_field = robot_imu_magnetometer_read();
+
+  //publish ros_imu_msg
+  ros_imu_pub.publish(&ros_imu_msg);
+}
+
 void ros_cmd_callback(const geometry_msgs::Twist & cmd_msg) {
   kinematic_velocities_t.linear_x = cmd_msg.linear.x;
   kinematic_velocities_t.linear_y = cmd_msg.linear.y;
@@ -204,6 +263,78 @@ void ros_pid_callback(const robotin_project::PID& pid) {
   motor2_pid.updateConstants(pid.p, pid.i, pid.d);
   motor3_pid.updateConstants(pid.p, pid.i, pid.d);
   motor4_pid.updateConstants(pid.p, pid.i, pid.d);
+}
+
+
+//-------------------Imu
+geometry_msgs::Vector3 robot_imu_accelerometer_read() {
+  geometry_msgs::Vector3 accel;
+  int16_t ax, ay, az;
+  
+  accelerometer.getAcceleration(&ax, &ay, &az);
+
+  accel.x = ax * (double) ACCEL_SCALE * G_TO_ACCEL;
+  accel.y = ay * (double) ACCEL_SCALE * G_TO_ACCEL;
+  accel.z = az * (double) ACCEL_SCALE * G_TO_ACCEL;
+  
+  return accel;
+}
+
+geometry_msgs::Vector3 robot_imu_gyroscope_read() {
+    geometry_msgs::Vector3 gyro;
+    int16_t gx, gy, gz;
+
+    gyroscope.getRotation(&gx, &gy, &gz);
+
+    gyro.x = gx * (double) GYRO_SCALE * DEG_TO_RAD;
+    gyro.y = gy * (double) GYRO_SCALE * DEG_TO_RAD;
+    gyro.z = gz * (double) GYRO_SCALE * DEG_TO_RAD;
+
+    return gyro;
+}
+
+geometry_msgs::Vector3 robot_imu_magnetometer_read() {
+    geometry_msgs::Vector3 mag;
+    int mx, my, mz;
+    mx = my = mz = 0;
+    
+    magnetometer.read(&mx,&my,&mz);
+    
+    //MGUAS TO GAUS - GAUS TO TESLA
+    mag.x = mx *0.001 * 0.0001;
+    mag.y = my *0.001 * 0.0001;
+    mag.z = mz *0.001 * 0.0001;
+
+    return mag;
+}
+
+bool robot_imu_init()
+{
+    Wire.begin();
+    bool ret;
+
+    accelerometer.initialize();
+    ret = accelerometer.testConnection();
+    if(!ret) {
+        ros_nh.loginfo("Accelerometer NOT Connected!");
+        return false;
+    } else {
+        ros_nh.loginfo("accelerometer Connected!");
+    }
+
+    gyroscope.initialize();
+    ret = gyroscope.testConnection();
+    if(!ret) {
+        ros_nh.loginfo("Gyroscope NOT Connected!");
+        return false;
+    } else {
+        ros_nh.loginfo("Gyroscope Connected!");
+    }
+
+    //TODO Check if there is a way to test connection
+    magnetometer.init();
+
+    return true;
 }
 
 //-------------------Robot base.
