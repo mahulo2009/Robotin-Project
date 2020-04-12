@@ -1,0 +1,16 @@
+version: '3.7'
+services:
+  master:
+    image: ubuntu-melodic/ros:ros-master
+    container_name: master
+  robot_base_node:
+    image: ubuntu-melodic/ros:robot-base-node
+    environment:
+      - "ROS_MASTER_URI=http://master:11311"
+    container_name: robot-base-node
+  robot_pid_configure_node:
+    image: ubuntu-melodic/ros:robot-pid-configure-node
+    environment:
+      - "ROS_MASTER_URI=http://master:11311"
+    container_name: robot-pid-configure-node
+

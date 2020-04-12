@@ -7,7 +7,8 @@ project(robotin_project)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED message_generation
+find_package(catkin REQUIRED 
+	message_generation
 	roscpp 
 	rospy
 	tf2
@@ -16,6 +17,7 @@ find_package(catkin REQUIRED message_generation
 	geometry_msgs
 	sensor_msgs
 	std_msgs
+	dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
@@ -95,10 +97,9 @@ generate_messages(
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
+generate_dynamic_reconfigure_options(
+	cfg/RobotinPID.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -140,8 +141,14 @@ include_directories(
 # )
 
 add_library(robotin_base src/robotin_base.cpp)
+add_library(robotin_pid_code src/robotin_pid_core.cpp)
+
 add_executable(robotin_base_node src/robotin_base_node.cpp)
+add_executable(robotin_pid_configure_node src/robotin_pid_configure_node.cpp)
+
 target_link_libraries(robotin_base_node robotin_base ${catkin_LIBRARIES})
+target_link_libraries(robotin_pid_configure_node robotin_pid_code ${catkin_LIBRARIES})
+
 add_dependencies(robotin_base robotin_project_generate_messages_cpp)
 
 ## Add cmake target dependencies of the library
