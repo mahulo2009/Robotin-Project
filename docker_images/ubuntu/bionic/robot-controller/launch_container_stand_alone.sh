@@ -3,8 +3,10 @@ docker run -it --rm \
        	-v /tmp/.X11-unix:/tmp/.X11-unix \
 	--network=host \
 	--privileged \
-	ubuntu-melodic/ros:robot-base-node \
-	bash
+    ubuntu-melodic/ros:robot-controller
+	
+
+
 
 
 
