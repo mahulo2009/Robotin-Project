@@ -62,9 +62,9 @@ int total_wheels_           = 4;
 #define MOTOR4_IN_A 11
 #define MOTOR4_IN_B 10
 
-#define K_P 0.9 // P constant
+#define K_P 2.0 // P constant
 #define K_I 0.4 // I constant
-#define K_D 0.6 // D constant
+#define K_D 0.1 // D constant
 #define PWM_MIN -255
 #define PWM_MAX 255
 
