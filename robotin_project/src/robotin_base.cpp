@@ -80,9 +80,9 @@ void RobotinBase::velCallback(const robotin_project::RAW_VEL& vel)
     odom.twist.twist.angular.y = 0.0;
     //angular speed from encoders
     odom.twist.twist.angular.z = angular_velocity_z_;
-    odom.twist.covariance[0] = 0.0001;
-    odom.twist.covariance[7] = 0.0001;
-    odom.twist.covariance[35] = 0.0001;
+    odom.twist.covariance[0] = 0.001;
+    odom.twist.covariance[7] = 0.001;
+    odom.twist.covariance[35] = 0.25;
 
     odom_publisher_.publish(odom);
 }
