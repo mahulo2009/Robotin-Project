@@ -150,6 +150,9 @@ target_link_libraries(robotin_base_node robotin_base ${catkin_LIBRARIES})
 target_link_libraries(robotin_pid_configure_node robotin_pid_code ${catkin_LIBRARIES})
 
 add_dependencies(robotin_base robotin_project_generate_messages_cpp)
+add_dependencies(robotin_pid_code robotin_project_generate_messages_cpp)
+
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
