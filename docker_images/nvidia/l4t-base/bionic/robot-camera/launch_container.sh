@@ -1,7 +1,7 @@
 #!/bin/sh
 
 docker run --runtime=nvidia --rm -it \
-           --net=foo \
-	   --env ROS_MASTER_URI=http://master:11311 \
+	   --network=host \
 	   --privileged \
-           jetson/ros:melodic-robot-camera
+     jetson/ros:melodic-robot-camera   
+

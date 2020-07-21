@@ -19,33 +19,27 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root/
-# GTSAM
-RUN git clone https://bitbucket.org/gtborg/gtsam.git
-RUN cd gtsam && \
-    mkdir build && \
-    cd build && \
-    cmake -DMETIS_SHARED=ON -DGTSAM_BUILD_STATIC_LIBRARY=OFF -DGTSAM_USE_SYSTEM_EIGEN=ON -DGTSAM_BUILD_TESTS=OFF -DGTSAM_BUILD_EXAMPLES_ALWAYS=OFF -DCMAKE_BUILD_TYPE=Release .. && \
-    make -j$(nproc) && \
-    make install && \
-    cd && \
-    rm -r gtsam
 
-# G2O
-RUN git clone https://github.com/RainerKuemmerle/g2o.git
-RUN cd g2o && \
-    mkdir build && \
-    cd build && \
-    cmake -DBUILD_WITH_MARCH_NATIVE=OFF -DCMAKE_BUILD_TYPE=Release .. && \
-    make -j$(nproc) && \
-    make install && \
-    cd && \
-    rm -r g2o
+RUN sudo apt-add-repository -y ppa:joseluisblancoc/gtsam-develop
 
-# libpointmatcher 
+#TODO include gstam
+# Install g2o
+RUN apt-get update && apt-get install --no-install-recommends -y \
+	ros-melodic-libg2o \
+    && rm -rf /var/lib/apt/lists/*
+
+# Link libGL library
+RUN ln -sf /usr/lib/aarch64-linux-gnu/libGL.so.1.0.0 /usr/lib/aarch64-linux-gnu/libGL.so
+RUN ln -s /usr/lib/aarch64-linux-gnu/libvtkCommonCore-6.2.so /usr/lib/libvtkproj4.so
+RUN ln -s /usr/lib/aarch64-linux-gnu/libvtkCommonCore-6.2.so /usr/lib/aarch64-linux-gnu/libvtkproj4-6.2.so.6.2.0
+
+# Install libpointmatcher
+RUN apt-get update && apt-get install --no-install-recommends -y \
+	libeigen3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN git clone https://github.com/ethz-asl/libnabo.git
-#commit Apr 25 2018
 RUN cd libnabo && \
-    git checkout 7e378f6765393462357b8b74d8dc8c5554542ae6 && \
     mkdir build && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
@@ -53,10 +47,9 @@ RUN cd libnabo && \
     make install && \
     cd && \
     rm -r libnabo
+
 RUN git clone https://github.com/ethz-asl/libpointmatcher.git
-#commit Jan 19 2018
 RUN cd libpointmatcher && \
-    git checkout 00004bd41e44a1cf8de24ad87e4914760717cbcc && \
     mkdir build && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
@@ -65,15 +58,15 @@ RUN cd libpointmatcher && \
     cd && \
     rm -r libpointmatcher
 
-RUN ln -sf /usr/lib/aarch64-linux-gnu/libGL.so.1.0.0 /usr/lib/aarch64-linux-gnu/libGL.so
+# Build RTAB-Map project
 
-# Install
+# Install rtabmap dependencies
 RUN apt-get update && apt-get install --no-install-recommends -y \
 	ros-melodic-rtabmap \
 	ros-melodic-rtabmap-ros \
     && rm -rf /var/lib/apt/lists/*
 
-# Install
+# UnInstall rtabmap dependencies
 RUN apt-get update && apt-get remove  -y \
 	ros-melodic-rtabmap \
 	ros-melodic-rtabmap-ros \
@@ -82,9 +75,8 @@ RUN apt-get update && apt-get remove  -y \
 # Clone source code
 RUN git clone https://github.com/introlab/rtabmap.git
 
+# Build rtabmap
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
-# Build RTAB-Map project
 RUN source /ros_entrypoint.sh && \
     cd rtabmap/build && \
     cmake .. && \

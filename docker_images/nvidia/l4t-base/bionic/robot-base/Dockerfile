@@ -2,13 +2,7 @@ FROM jetson/ros:melodic-base
 
 # INSTALL robotin-project dependencies
 RUN apt-get update && apt-get install -y \
-    ros-melodic-rtabmap-ros \
-        ros-melodic-ddynamic-reconfigure \
-        ros-melodic-rqt-reconfigure \
-        ros-melodic-teleop-twist-keyboard \
-        ros-melodic-rosserial-arduino \
-        ros-melodic-rosserial \
-        vim \
+		ros-melodic-tf2-geometry-msgs \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
