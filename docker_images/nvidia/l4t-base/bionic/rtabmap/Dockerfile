@@ -88,9 +88,9 @@ RUN source /ros_entrypoint.sh && \
 
 #Intall ros packages
 RUN cd $CATKIN_WS/src && \		
-	git clone https://github.com/ros-perception/vision_opencv src/vision_opencv && \
-	git clone https://github.com/ros-perception/image_transport_plugins.git src/image_transport_plugins && \
-	git clone https://github.com/introlab/rtabmap_ros.git src/rtabmap_ros && \	
+	git clone -b melodic https://github.com/ros-perception/vision_opencv vision_opencv && \
+	git clone https://github.com/ros-perception/image_transport_plugins.git image_transport_plugins && \
+	git clone https://github.com/introlab/rtabmap_ros.git rtabmap_ros && \	
 	cd $CATKIN_WS && \       
 	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release'
 
