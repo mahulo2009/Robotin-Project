@@ -1,16 +1,25 @@
 version: '3.7'
+
 services:
-  master:
-    image: ubuntu-melodic/ros:ros-master
-    container_name: master
-  robot_base_node:
-    image: ubuntu-melodic/ros:robot-base-node
+
+  robot_imu:
+    network_mode: host
     environment:
-      - "ROS_MASTER_URI=http://master:11311"
-    container_name: robot-base-node
-  robot_pid_configure_node:
-    image: ubuntu-melodic/ros:robot-pid-configure-node
+        - ROS_MASTER_URI=http://nvidia:11311 
+    image: ubuntu-melodic/ros:robot-imu
+    container_name: robot_imu 
+
+  ros_vo:
+    network_mode: host
     environment:
-      - "ROS_MASTER_URI=http://master:11311"
-    container_name: robot-pid-configure-node
+        - ROS_MASTER_URI=http://nvidia:11311 
+    image: ubuntu-melodic/ros:ros-vo
+    container_name: ros_vo 
+
+  robot_navigation:
+    network_mode: host
+    environment:
+        - ROS_MASTER_URI=http://nvidia:11311 
+    image: ubuntu-melodic/ros:robot-navigation
+    container_name: robot_navigation 
 

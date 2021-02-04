@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
 	ros-melodic-ddynamic-reconfigure \
 	ros-melodic-rqt-reconfigure \
 	ros-melodic-teleop-twist-keyboard \
+    ros-melodic-imu-tools \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -26,3 +27,10 @@ RUN cd $CATKIN_WS/src && \
 	cd $CATKIN_WS && \       
 	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release'
 
+# BUILD robotin-project
+RUN cd $CATKIN_WS/src && \		
+	git clone https://github.com/mahulo2009/Robotin-Project.git && \	
+	cd $CATKIN_WS && \       
+	/bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release'
+
+CMD ["/bin/bash", "-c", "source $CATKIN_WS/devel/setup.bash;rosrun rviz rviz -d /root/catkin_ws/src/Robotin-Project/robotin_project/config/odom.rviz"]
