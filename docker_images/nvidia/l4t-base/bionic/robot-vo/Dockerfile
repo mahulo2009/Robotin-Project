@@ -1,11 +1,5 @@
 FROM jetson/ros:melodic-rtabmap
 
-# INSTALL robotin-project dependencies
-RUN apt-get update && apt-get install -y \
-		ros-melodic-rtabmap-ros \
-        && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
 
 # BUILD robotin-project
 RUN cd $CATKIN_WS/src && \
