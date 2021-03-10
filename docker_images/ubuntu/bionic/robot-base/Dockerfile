@@ -1,4 +1,4 @@
-FROM ubuntu-melodic/ros:base
+FROM ubuntu/ros:melodic-ros-base
 
 # INSTALL robotin-project dependencies
 RUN apt-get update && apt-get install -y \

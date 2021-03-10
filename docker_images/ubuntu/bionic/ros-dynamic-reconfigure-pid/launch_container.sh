@@ -5,7 +5,7 @@ docker run -it --rm \
 	--env ROS_MASTER_URI=http://gara-ubuntu:11311 \
 	--network=host \
 	--privileged \
-	ubuntu/ros:robot-pid-dynamic-reconfigure 
+	ubuntu/ros:melodic-ros-dynamic-reconfigure-pid
 
 
 

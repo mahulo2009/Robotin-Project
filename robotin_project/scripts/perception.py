@@ -15,7 +15,6 @@ from features import compute_normal_histograms
 from features import get_normals
 from marker_tools import make_label
 
-
 class PointCloudSubscriber:
     """ Subscriber to the Point Cloud """
     def __init__(self):
@@ -31,7 +30,7 @@ class PointCloudSubscriber:
         self.pcl_data = ros_to_pcl(ros_msg) 
 
         # Statistical Outlier Filtering
-        #self.pcl_data=self.statistical(self.pcl_data)
+        # self.pcl_data=self.statistical(self.pcl_data)
 
         # Voxel Grid Downsampling
         self.pcl_data=self.voxel_grid(self.pcl_data)
@@ -39,6 +38,9 @@ class PointCloudSubscriber:
         # PassThrough Filter
         self.pcl_data=self.passthrough(self.pcl_data)
         self.pcl_data=self.passthrough_y(self.pcl_data)
+
+        #ros_data = pcl_to_ros(self.pcl_data)
+        #pcl_objects_pub.publish(ros_data)
 
         # RANSAC Plane Segmentation
         pcl_data_table, pcl_data_objects = self.segmenter(self.pcl_data)
@@ -66,9 +68,9 @@ class PointCloudSubscriber:
         pcl_objects_pub.publish(ros_data_objects_clustered)
 
         # Classify the clusters! (loop through each detected cluster one at a time)
-        detected_objects_labels,detected_objects = self.classifier(pcl_data_objects,cluster_indices,pcl_data_objects_xyz)
+        #detected_objects_labels,detected_objects = self.classifier(pcl_data_objects,cluster_indices,pcl_data_objects_xyz)
         
-        rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
+        #rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
 
         # Publish the list of detected objects        
         #detected_object_pub.publish(detected_objects)
@@ -95,16 +97,16 @@ class PointCloudSubscriber:
         filter_axis = 'z'
         passthrough_filter.set_filter_field_name(filter_axis)
         axis_min = 0.4
-        axis_max = 0.9
+        axis_max = 1.0
         passthrough_filter.set_filter_limits(axis_min, axis_max)
         pcl_data = passthrough_filter.filter()
         return pcl_data
     
     def passthrough_y(self,pcl_data):
         passthrough_filter = pcl_data.make_passthrough_filter()
-        filter_axis = 'y'
+        filter_axis = 'x'
         passthrough_filter.set_filter_field_name(filter_axis)
-        axis_min = 0.0
+        axis_min = -0.4
         axis_max = 0.4
         passthrough_filter.set_filter_limits(axis_min, axis_max)
         pcl_data = passthrough_filter.filter()
@@ -114,7 +116,7 @@ class PointCloudSubscriber:
         segmenter = pcl_data.make_segmenter()    
         segmenter.set_model_type(pcl.SACMODEL_PLANE)
         segmenter.set_method_type(pcl.SAC_RANSAC)    
-        segmenter.set_distance_threshold(0.02)
+        segmenter.set_distance_threshold(0.01)
         inliers, coefficients = segmenter.segment()
         # Extract inliers and outliers
         pcl_data_objects = pcl_data.extract(inliers, negative=True)
@@ -127,7 +129,7 @@ class PointCloudSubscriber:
         EuclideanClusterExtraction = pcl_data_objects_xyz.make_EuclideanClusterExtraction()
         EuclideanClusterExtraction.set_ClusterTolerance(0.05)
         EuclideanClusterExtraction.set_MinClusterSize(200)
-        EuclideanClusterExtraction.set_MaxClusterSize(2000)
+        EuclideanClusterExtraction.set_MaxClusterSize(5000)
         # Search the k-d tree for clusters
         EuclideanClusterExtraction.set_SearchMethod(tree)
         # Extract indices for each of the discovered clusters
@@ -209,14 +211,14 @@ if __name__ == '__main__':
     #world_joint_pub = rospy.Publisher("/pr2/world_joint_controller/command",Float64,queue_size=1)
 
     # Load Model From disk
-    model = pickle.load(open('config/model-perception.sav', 'rb'))
+    #model = pickle.load(open('config/model-perception.sav', 'rb'))
     
 
 
-    clf = model['classifier']
-    encoder = LabelEncoder()
-    encoder.classes_ = model['classes']
-    scaler = model['scaler']
+    #clf = model['classifier']
+    #encoder = LabelEncoder()
+    #encoder.classes_ = model['classes']
+    #scaler = model['scaler']
 
     # Initialize color_list
     get_color_list.color_list = []
