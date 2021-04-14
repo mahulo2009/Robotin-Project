@@ -3,7 +3,7 @@ DWAPlannerROS:
   ######## Robot configuration parameters
 
   #The absolute value of the maximum translational velocity for the robot in m/s
-  max_vel_trans: 0.75
+  max_vel_trans: 0.7
   #The absolute value of the minimum translational velocity for the robot in m/s
   min_vel_trans: 0.2
   #The maximum x velocity for the robot in m/s.
@@ -15,15 +15,15 @@ DWAPlannerROS:
   #The maximum y velocity for the robot in m/s
   min_vel_y: 0.0
   #The absolute value of the maximum rotational velocity for the robot in rad/s
-  max_vel_theta: 1
+  max_vel_theta: 4.2
   #The absolute value of the minimum rotational velocity for the robot in rad/s
   min_vel_theta: 0.3
   #The x acceleration limit of the robot in meters/sec^2
-  acc_lim_x: 1
+  acc_lim_x: 0.35
   #The y acceleration limit of the robot in meters/sec^2
   acc_lim_y: 0.0
   #The rotational acceleration limit of the robot in radians/sec^2
-  acc_lim_th: 1.0
+  acc_lim_th: 2.0
 
 
   ######## Goal Tolerance parameters
@@ -37,9 +37,9 @@ DWAPlannerROS:
   ######## Forward Simulation parameters
 
   #The amount of time to forward-simulate trajectories in seconds
-  sim_time: 3.0
+  sim_time: 2.0
   #The step size, in meters, to take between points on a given trajectory
-  sim_granularity: 0.1
+  sim_granularity: 0.025
   #The number of samples to use when exploring the x velocity space
   vx_samples: 20
   #The number of samples to use when exploring the y velocity space
